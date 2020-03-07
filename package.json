@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Fastify sequelize connection plugin",
   "main": "src/",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gAmadorH/fastify-sequelizer.git"
