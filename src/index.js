@@ -1,10 +1,26 @@
 const fp = require('fastify-plugin')
 const Sequelize = require('sequelize')
 
+let logs = {}
+
+function onClose(app, next) {
+  app.sequelize.close().then(() => {
+    app.log.info(logs.closure.success)
+    next()
+  }).catch((err) => {
+    app.log.error(logs.closure.error)
+    next(err)
+  })
+}
+
 async function plugin(fastify, opts) {
   const { url, options } = opts.params
-  const { logs } = opts
+  logs = opts.logs
   let sequelize = null
+
+  if (options.logging) {
+    options.logging = (msg) => fastify.log.debug(msg)
+  }
 
   try {
     sequelize = new Sequelize(url, options)
@@ -16,15 +32,7 @@ async function plugin(fastify, opts) {
   }
 
   // if the fastify is closed, the db will also be closed
-  fastify.addHook('onClose', (app, next) => {
-    app.sequelize.close().then(() => {
-      app.log.info(logs.closure.success)
-      next()
-    }).catch((err) => {
-      app.log.error(logs.closure.error)
-      next(err)
-    })
-  })
+  fastify.addHook('onClose', onClose)
 
   fastify.decorate('sequelize', sequelize)
   fastify.decorate('Sequelize', Sequelize)
