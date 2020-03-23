@@ -1,22 +1,23 @@
 const fp = require('fastify-plugin')
 const Sequelize = require('sequelize')
 
-let logs = {}
-
-function onClose(app, next) {
-  app.sequelize.close().then(() => {
-    app.log.info(logs.closure.success)
-    next()
-  }).catch((err) => {
-    app.log.error(logs.closure.error)
-    next(err)
-  })
+const logs = {
+  connection: {
+    success: 'DATABASE: ready',
+    error: 'DATABASE: error'
+  },
+  closure: {
+    success: 'DATABASE: disconnected',
+    error: 'DATABASE: no disconnected'
+  }
 }
 
 async function plugin(fastify, opts) {
-  const { url, options } = opts.params
-  logs = opts.logs
+  const { url, options } = opts.database
+  const { logs: customLogs = {} } = opts
   let sequelize = null
+
+  Object.assign(logs, customLogs)
 
   if (options.logging) {
     options.logging = (msg) => fastify.log.debug(msg)
@@ -24,20 +25,30 @@ async function plugin(fastify, opts) {
 
   try {
     sequelize = new Sequelize(url, options)
-
     await sequelize.authenticate()
+
+    fastify.log.info(logs.connection.success)
   } catch (err) {
     fastify.log.error(logs.connection.error)
+
     throw err
   }
 
   // if the fastify is closed, the db will also be closed
-  fastify.addHook('onClose', onClose)
+  fastify.addHook('onClose', (app, done) => {
+    app.sequelize.close().then(() => {
+      app.log.info(logs.closure.success)
+
+      done()
+    }).catch((err) => {
+      app.log.error(logs.closure.error)
+
+      done(err)
+    })
+  })
 
   fastify.decorate('sequelize', sequelize)
   fastify.decorate('Sequelize', Sequelize)
-
-  fastify.log.info(logs.connection.success)
 }
 
 module.exports = fp(plugin, {
