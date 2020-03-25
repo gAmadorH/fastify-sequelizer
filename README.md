@@ -38,8 +38,9 @@ fastify.register(require('fastify-sequelizer'), { database, logs });
 ## Usage
 
 ```js
+// your database connection instance using sequelize
 fastify.sequelize
 
-// or
+// require('sequelize') instance
 fastify.Sequelize
 ```
