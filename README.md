@@ -37,6 +37,8 @@ fastify.register(require('fastify-sequelizer'), { database, logs });
 
 ## Usage
 
+Now you already have access from fastify to the database connection and the sequelize library where you need them
+
 ```js
 // your database connection instance using sequelize
 fastify.sequelize
